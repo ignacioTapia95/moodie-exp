@@ -58,7 +58,7 @@ To set up the project, follow these steps:
 
 To process video files using the available script, follow these steps:
 
-1. Run the [process_files.py](http://_vscodecontentref_/6) script with the necessary arguments:
+1. Run the [process_files.py](scripts/process_files.py) script with the necessary arguments:
 
    ```sh
    python scripts/process_files.py --input <input_path> --output <output_path> --extensions <extensions> --threshold <threshold> [--recursive] [--debug]
@@ -77,4 +77,4 @@ Example:
 python scripts/process_files.py --input data/raw --output data/processed
 ```
 
-This will process the video files in the `raw` directory and save the processed files in the `processed` directory.
+This will process the video files in the [raw](data/raw) directory and save the processed files in the [processed](data/processed/)
