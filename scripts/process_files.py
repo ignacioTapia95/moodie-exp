@@ -1,11 +1,13 @@
-import sys
 import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
+import sys
 import argparse
-from src.data.processing import Video
+
+# fmt: off
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.utils import list_files
+from src.data.preprocessing import Video
+# fmt: on
+
 
 def parse_args():
     """
@@ -41,6 +43,21 @@ def parse_args():
         help="Threshold used by the split function (default: 27.0)."
     )
     parser.add_argument(
+        "--video-files",
+        action="store_true",
+        help="If set, video files will be saved"
+    )
+    parser.add_argument(
+        "--images",
+        action="store_true",
+        help="If set, three frames per shot will be saved"
+    )
+    parser.add_argument(
+        "--metadata",
+        action="store_true",
+        help="If set, shot metadata will be saved"
+    )
+    parser.add_argument(
         "--recursive",
         action="store_true",
         help="If set, it will search subdirectories recursively."
@@ -52,7 +69,18 @@ def parse_args():
     )
     return parser.parse_args()
 
-def process_files(input_path, output_path, extensions, threshold, recursive, debug):
+
+def process_files(
+        input_path: str,
+        output_path: str,
+        extensions: list,
+        threshold: float,
+        video_files: bool,
+        images: bool,
+        metadata: bool,
+        recursive: bool,
+        debug: bool,
+):
     """
     Process video files in a directory.
 
@@ -87,29 +115,28 @@ def process_files(input_path, output_path, extensions, threshold, recursive, deb
         video = Video(path=video_file, debug=debug)
         video.split_and_save_shots(
             output_path=output_path,
-            threshold=threshold
+            threshold=threshold,
+            save_video_shots=video_files,
+            save_image_shots=images,
+            save_metadata_shots=metadata,
         )
 
-def main():
-    """
-    Main function to process video files based on the command-line arguments.
-    
-    Returns:
-        None
 
-    Examples:
-        >>> main()
-    """
+def main():
     args = parse_args()
 
     process_files(
         input_path=args.input,
         output_path=args.output,
         extensions=args.extensions,
+        video_files=args.video_files,
+        images=args.images,
+        metadata=args.metadata,
         threshold=args.threshold,
         recursive=args.recursive,
         debug=args.debug
     )
+
 
 if __name__ == "__main__":
     main()

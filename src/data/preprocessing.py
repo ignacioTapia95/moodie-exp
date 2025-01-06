@@ -2,14 +2,14 @@ import os
 import json
 from typing import Iterable, Tuple
 
-from scenedetect import open_video, SceneManager, split_video_ffmpeg
+from scenedetect import open_video, SceneManager, split_video_ffmpeg, save_images
 from scenedetect.detectors import ContentDetector
 from scenedetect.frame_timecode import FrameTimecode
 
 
 class Video:
     """
-    Represents a video that can be split into shots using the SceneDetect library, 
+    Represents a video that can be split into shots using the SceneDetect library,
     and provides functionality to save both the shot files and their metadata.
 
     This class uses content detection based on a defined threshold to identify scene
@@ -79,6 +79,7 @@ class Video:
         """
         self.path = path
         self.debug = debug
+        self.video = open_video(self.path)
 
         if video_name is None:
             self.video_name = path.split('/')[-1].split('.')[0]
@@ -105,10 +106,9 @@ class Video:
             >>> video = Video(path='data/raw/video1.mp4', debug=True)
             >>> shot_list = video._get_shot_list(threshold=30.0)
         """
-        video = open_video(self.path)
         shot_manager = SceneManager()
         shot_manager.add_detector(ContentDetector(threshold=threshold))
-        shot_manager.detect_scenes(video, show_progress=self.debug)
+        shot_manager.detect_scenes(self.video, show_progress=self.debug)
         shot_list = shot_manager.get_scene_list()
 
         return shot_list
@@ -144,7 +144,39 @@ class Video:
             show_progress=self.debug
         )
 
-    def _save_shots_info(
+    def _save_image_shots(
+            self,
+            shot_list: Iterable[Tuple[FrameTimecode, FrameTimecode]],
+            output_path: str,
+            output_file_template: str = "$VIDEO_NAME-Scene-$SCENE_NUMBER-$IMAGE_NUMBER",
+    ):
+        """
+        Splits the video into individual shot files and saves them in the specified directory.
+
+        Args:
+            shot_list (Iterable[Tuple[FrameTimecode, FrameTimecode]]): An iterable
+                of (start_timecode, end_timecode) tuples representing the detected shots.
+            output_path (str): The directory path where the shot files will be stored.
+            output_file_template (str, optional): A naming template for each shot file.
+                Default is '$VIDEO_NAME-Shot-$SCENE_NUMBER.mp4'.
+
+        Returns:
+            None
+
+        Examples:
+            >>> video = Video(path='data/raw/video1.mp4', debug=True)
+            >>> video._save_video_shots(shot_list, output_path='data/processed/video1')
+        """
+        save_images(
+            shot_list,
+            self.video,
+            num_images=3,
+            output_dir=output_path,
+            image_name_template=output_file_template,
+            show_progress=self.debug,
+        )
+
+    def _save_shots_metadata(
             self,
             shot_list: Iterable[Tuple[FrameTimecode, FrameTimecode]],
             output_path: str,
@@ -186,8 +218,12 @@ class Video:
 
     def split_and_save_shots(
             self,
+            save_video_shots: bool,
+            save_image_shots: bool,
+            save_metadata_shots: bool,
             threshold: float = 27.0,
             output_path: str = './data/processed',
+
     ):
         """
         High-level method that performs the entire process of detecting shots, 
@@ -214,14 +250,32 @@ class Video:
             >>> video.split_and_save_shots(output_path='data/processed', threshold=30.0)
         """
         shot_list = self._get_shot_list(threshold=threshold)
-        video_output_dir = os.path.join(output_path, "video", self.video_name)
-        metadata_output_dir = os.path.join(output_path, "metadata")
 
-        self._save_video_shots(
-            shot_list=shot_list,
-            output_path=video_output_dir,
-        )
-        self._save_shots_info(
-            shot_list=shot_list,
-            output_path=metadata_output_dir,
-        )
+        if save_video_shots:
+            video_output_dir = os.path.join(
+                output_path,
+                "video",
+                self.video_name
+            )
+            self._save_video_shots(
+                shot_list=shot_list,
+                output_path=video_output_dir,
+            )
+
+        if save_image_shots:
+            image_output_dir = os.path.join(
+                output_path,
+                "image",
+                self.video_name
+            )
+            self._save_image_shots(
+                shot_list=shot_list,
+                output_path=image_output_dir
+            )
+
+        if save_metadata_shots:
+            metadata_output_dir = os.path.join(output_path, "metadata")
+            self._save_shots_metadata(
+                shot_list=shot_list,
+                output_path=metadata_output_dir,
+            )

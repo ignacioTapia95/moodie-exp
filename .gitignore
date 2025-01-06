@@ -3,6 +3,7 @@
 *.mov
 *.mp4
 *.mp3
+*.mkv
 .DS_Store
 __pycache__
 data/raw/*/*
